@@ -8,22 +8,22 @@ const io = require("socket.io")(http);
 // App variables
 const PORT = 3000;
 const connections = [];
+const directoryToWatch = "/";
 const fsWatchOptions = { recursive: true };
 let count = 0;
 
 const fileUpdatedCallback = (eventType, fileName) => {
-    count++;
-    io.emit("fsEvent", `${count}: ${eventType} ${fileName}`);
+    io.emit("fsEvent", `${++count}: ${eventType} ${fileName}`);
 }
 
 // Set up our express server
 app.use(express.static('public'))
 
 // main logic
-io.on("connection", function (socket) {
+io.on("connection", socket => {
     connections.push(socket.id);
     if (connections.length === 1) {
-        fs.watch("/", fsWatchOptions, fileUpdatedCallback);
+        fs.watch(directoryToWatch, fsWatchOptions, fileUpdatedCallback);
     }
 
     socket.on("disconnect", disconnectMsg => {
@@ -32,7 +32,7 @@ io.on("connection", function (socket) {
 
         // no point in watching the root directory if no one is listening...
         if (connections.length === 0) {
-            fs.unwatchFile("/");
+            fs.unwatchFile(directoryToWatch);
         }
     });
 });
